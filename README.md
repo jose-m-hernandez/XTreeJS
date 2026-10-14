@@ -3,7 +3,7 @@
 [![CI](https://github.com/jozecuervo/XTreeJS/actions/workflows/ci.yml/badge.svg)](https://github.com/jozecuervo/XTreeJS/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-XTreeJS is a modern, keyboard-first revival of the classic DOS-era XTree/XTreeGold file manager (1985-1995), built with Bun + TypeScript + neo-blessed.
+XTreeJS is a keyboard-first revival of the classic DOS file manager XTree, built with Bun and TypeScript.
 
 <p align="center">
   <img src="docs/screenshot.png" alt="XTreeJS running in a terminal" width="720">
