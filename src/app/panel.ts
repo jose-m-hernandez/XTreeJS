@@ -8,7 +8,7 @@ import { getDiskStats } from '../fs/disk-stats.js';
 import { computeStatsForPaths } from '../fs/dir-stats.js';
 import { createAppState } from '../state/app-state.js';
 import type { AppState } from '../state/app-state.js';
-import { createTreeState } from '../state/tree-state.js';
+import { createTreeState, selectTreePath } from '../state/tree-state.js';
 import type { TreeState } from '../state/tree-state.js';
 import { listDirectory, listDirectoryRecursive } from '../fs/list.js';
 
@@ -30,15 +30,40 @@ export interface Panel {
   toggleRecursiveMode(mode: 'branch' | 'showall', basePath: string): Promise<void>;
 }
 
+// The directory lister is injectable so a test can control when each listing
+// resolves; production always uses listDirectory.
+export type Lister = typeof listDirectory;
+
 export async function createPanel(
   screen: blessed.Widgets.Screen,
-  startPath: string
+  startPath: string,
+  lister: Lister = listDirectory
 ): Promise<Panel> {
   const state = createAppState(startPath);
   const treeState = await createTreeState(startPath);
 
   const treePane = createTreePane(screen);
   const filePane = createFilePane(screen);
+
+  // Each listing takes a generation number; a result whose number is no longer
+  // current was overtaken by a later load and must not touch the state.
+  let loadGeneration = 0;
+
+  // Lists state.currentPath into state.entries. Returns false, leaving the
+  // state alone, when a later load started while this one was in flight.
+  async function relist(): Promise<boolean> {
+    const generation = ++loadGeneration;
+    const entries = await lister(
+      state.currentPath,
+      state.sortOrder,
+      state.sortDirection,
+      state.filespecFilter
+    );
+    if (generation !== loadGeneration) return false;
+    state.entries = entries;
+    state.selectedIndex = 0;
+    return true;
+  }
 
   const p: Panel = {
     state,
@@ -64,7 +89,7 @@ export async function createPanel(
       const paths = treeState.flatNodes.map((n) => n.path);
       await computeStatsForPaths(paths);
       // Re-render tree to show newly computed stats
-      treePane.refresh(treeState.flatNodes, state.currentPath);
+      treePane.refresh(treeState.flatNodes, state.currentPath, treeState.selectedIndex);
       screen.render();
     },
 
@@ -72,20 +97,15 @@ export async function createPanel(
     // the selection -- the common tail of loadDirectory and every handler
     // that changes sort order or the filespec filter without changing dir.
     async reloadEntries(): Promise<void> {
-      state.entries = await listDirectory(
-        state.currentPath,
-        state.sortOrder,
-        state.sortDirection,
-        state.filespecFilter
-      );
-      state.selectedIndex = 0;
+      await relist();
     },
 
     async loadDirectory(dirPath: string): Promise<void> {
       state.currentPath = dirPath;
       state.listingMode = 'normal';
       state.branchBasePath = null;
-      await p.reloadEntries();
+      if (!(await relist())) return; // a newer load took over; drop this one
+      selectTreePath(treeState, dirPath);
       p.updateDiskInfo(dirPath); // fire and forget, don't block
       p.refreshUI();
     },
@@ -102,12 +122,15 @@ export async function createPanel(
       }
       state.listingMode = mode;
       state.branchBasePath = basePath;
-      state.entries = await listDirectoryRecursive(
+      const generation = ++loadGeneration;
+      const entries = await listDirectoryRecursive(
         basePath,
         state.sortOrder,
         state.sortDirection,
         state.filespecFilter
       );
+      if (generation !== loadGeneration) return;
+      state.entries = entries;
       state.selectedIndex = 0;
       p.refreshUI();
     },

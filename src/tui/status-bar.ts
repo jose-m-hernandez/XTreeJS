@@ -82,17 +82,15 @@ export function createStatusBar(screen: blessed.Widgets.Screen): StatusBar {
     const tagInfo = tagCount > 0 ? `  ${fg(`${tagCount} tagged`, Colors.valueFg)}` : '';
     const arrow = sortDirection === 'asc' ? '^' : 'v';
     const sortInfo = `  Sort: ${SORT_LABELS[sortOrder]} ${arrow}`;
-    const filterInfo = filespecFilter !== '*' ? `  Filter: ${filespecFilter}` : '';
+    const filterInfo = filespecFilter !== '*' ? `  Filter: ${blessed.escape(filespecFilter)}` : '';
     const disk = diskInfo ? `  ${diskInfo}` : '';
     topBar.setContent(
-      ` XTreeJS ─ ${modePrefix}${path}  (${itemCount} items)${tagInfo}${taggedOnlyLabel}${sortInfo}${filterInfo}${disk}`
+      ` XTreeJS ─ ${modePrefix}${blessed.escape(path)}  (${itemCount} items)${tagInfo}${taggedOnlyLabel}${sortInfo}${filterInfo}${disk}`
     );
-    screen.render();
   }
 
   function updateBottomHints(hints: string): void {
     bottomBar.setContent(` ${hints}`);
-    screen.render();
   }
 
   return { topBar, bottomBar, updatePath, updateBottomHints };

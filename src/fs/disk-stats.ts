@@ -1,5 +1,6 @@
 import { $ } from 'bun';
 import { getCachedTools } from './detect-tools.js';
+import { formatSize } from '../util/format.js';
 
 export interface DiskStats {
   device: string;
@@ -32,9 +33,9 @@ export async function getDiskStats(dirPath: string): Promise<DiskStats> {
         cachedStats = {
           device: d.device || 'unknown',
           mountpoint: d.mount_point || '/',
-          total: formatBytes(d.total),
-          used: formatBytes(d.used),
-          available: formatBytes(d.free),
+          total: formatSize(d.total),
+          used: formatSize(d.used),
+          available: formatSize(d.free),
           percentUsed: `${((d.used / d.total) * 100).toFixed(0)}%`,
         };
         cachedPath = dirPath;
@@ -77,13 +78,6 @@ export async function getDiskStats(dirPath: string): Promise<DiskStats> {
     available: '?',
     percentUsed: '?',
   };
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes}B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}K`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)}M`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)}G`;
 }
 
 export function clearDiskStatsCache(): void {

@@ -5,7 +5,6 @@ import {
   tagAll,
   untagCurrent,
   untagAll,
-  invertTags,
   getVisibleEntries,
   getSelectedEntry,
   getOperationTargets,
@@ -86,22 +85,6 @@ describe('tagging', () => {
     state.taggedPaths.add('/test/file2.txt');
     untagAll(state);
     expect(state.taggedPaths.size).toBe(0);
-  });
-
-  test('invertTags toggles all file tags', () => {
-    const state = createAppState('/home');
-    state.entries = [
-      mockEntry('dir1', true),
-      mockEntry('file1.txt'),
-      mockEntry('file2.txt'),
-      mockEntry('file3.txt'),
-    ];
-    state.taggedPaths.add('/test/file1.txt');
-    invertTags(state);
-    expect(state.taggedPaths.has('/test/file1.txt')).toBe(false);
-    expect(state.taggedPaths.has('/test/file2.txt')).toBe(true);
-    expect(state.taggedPaths.has('/test/file3.txt')).toBe(true);
-    expect(state.taggedPaths.has('/test/dir1')).toBe(false); // dirs never tagged
   });
 });
 

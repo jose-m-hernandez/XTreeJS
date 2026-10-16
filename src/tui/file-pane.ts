@@ -1,6 +1,7 @@
 import blessed from 'neo-blessed';
 import { bgFg, Colors, fg } from '../config/defaults.js';
 import type { FileEntry } from '../fs/list.js';
+import { formatSize } from '../util/format.js';
 import type { DisplayMode, ListingMode } from '../state/app-state.js';
 
 export interface FilePane {
@@ -19,14 +20,6 @@ function colorForEntry(entry: FileEntry): string {
   if (entry.name.startsWith('.')) return Colors.hidden;
   if (entry.isExecutable) return Colors.executable;
   return Colors.default;
-}
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes}B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}K`;
-  if (bytes < 1024 * 1024 * 1024)
-    return `${(bytes / (1024 * 1024)).toFixed(1)}M`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)}G`;
 }
 
 function formatDate(mtime: Date): string {
@@ -76,7 +69,8 @@ export function createFilePane(screen: blessed.Widgets.Screen): FilePane {
     // Pad name to 30 chars for alignment
     const paddedName = name.length > 35 ? name.slice(0, 34) + '~' : name;
 
-    return `${prefix}${fg(paddedName, color)}  ${typeIndicator.padStart(8)}  ${date}`;
+    // Names are data, not markup: escape any {tag} text after truncating.
+    return `${prefix}${fg(blessed.escape(paddedName), color)}  ${typeIndicator.padStart(8)}  ${date}`;
   }
 
   function refresh(entries: FileEntry[], taggedPaths: Set<string>): void {
@@ -84,14 +78,12 @@ export function createFilePane(screen: blessed.Widgets.Screen): FilePane {
       formatEntry(e, taggedPaths.has(e.path))
     );
     widget.setItems(items as any);
-    screen.render();
   }
 
   function setFocused(focused: boolean): void {
     (widget.style.border as any).fg = focused
       ? Colors.borderFocused
       : Colors.border;
-    screen.render();
   }
 
   function getSelectedIndex(): number {
@@ -100,7 +92,6 @@ export function createFilePane(screen: blessed.Widgets.Screen): FilePane {
 
   function setSelectedIndex(index: number): void {
     widget.select(index);
-    screen.render();
   }
 
   function setDisplayMode(mode: DisplayMode): void {
@@ -126,7 +117,6 @@ export function createFilePane(screen: blessed.Widgets.Screen): FilePane {
       widget.height = '100%-2';
       widget.show();
     }
-    screen.render();
   }
 
   function setListingMode(mode: ListingMode): void {
@@ -136,7 +126,6 @@ export function createFilePane(screen: blessed.Widgets.Screen): FilePane {
       showall: ' Showall ',
     };
     widget.setLabel(labels[mode]);
-    screen.render();
   }
 
   return { widget, refresh, setFocused, getSelectedIndex, setSelectedIndex, setDisplayMode, setListingMode };

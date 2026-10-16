@@ -3,14 +3,13 @@ import * as fs from 'fs/promises';
 import {
   getSelectedEntry,
   getOperationTargets,
-  invertTags,
   getVisibleEntries,
   clampSelectedIndex,
   advanceSelectionAfterTagChange,
 } from '../state/app-state.js';
 import type { SortOrder, DisplayMode } from '../state/app-state.js';
 import {
-  expandNode, refreshFlatNodes, expandTreeToPath,
+  expandNode, refreshFlatNodes, expandTreeToPath, selectTreePath,
   deepDive, findNextSibling,
 } from '../state/tree-state.js';
 import { listAllFilesRecursive, matchFilespec } from '../fs/list.js';
@@ -42,6 +41,7 @@ export function createCommands(app: App): InputCallbacks {
         // of branch/showall mode via `\` onto a deeply nested directory).
         await expandTreeToPath(p.treeState, navPath);
         refreshFlatNodes(p.treeState);
+        selectTreePath(p.treeState, navPath);
         app.refreshUI();
         p.computeTreeStats().catch(() => {}); // fire and forget
       },
@@ -261,12 +261,6 @@ export function createCommands(app: App): InputCallbacks {
         }
       },
 
-      onInvertAllTags: () => {
-        const p = app.activePanel();
-        invertTags(p.state);
-        app.refreshUI();
-      },
-
       onSpeedNav: (letter: string) => {
         const p = app.activePanel();
         // Find next entry starting with letter, wrapping around
@@ -373,27 +367,23 @@ export function createCommands(app: App): InputCallbacks {
 
       onDeepDive: async () => {
         const p = app.activePanel();
-        const idx = p.treePane.getSelectedIndex();
-        const node = p.treeState.flatNodes[idx];
+        const node = p.treeState.flatNodes[p.treeState.selectedIndex];
         if (!node) return;
         const target = await deepDive(node);
         refreshFlatNodes(p.treeState);
         await p.loadDirectory(target.path);
         // Select the target node in the tree
-        const newIdx = p.treeState.flatNodes.findIndex((n) => n.path === target.path);
-        if (newIdx >= 0) {
-          p.treePane.widget.select(newIdx);
-        }
+        selectTreePath(p.treeState, target.path);
         app.refreshUI();
         p.computeTreeStats().catch(() => {}); // fire and forget
       },
 
       onNextSibling: () => {
         const p = app.activePanel();
-        const idx = p.treePane.getSelectedIndex();
+        const idx = p.treeState.selectedIndex;
         const nextIdx = findNextSibling(p.treeState.flatNodes, idx);
         if (nextIdx !== idx) {
-          p.treePane.widget.select(nextIdx);
+          p.treeState.selectedIndex = nextIdx;
           const node = p.treeState.flatNodes[nextIdx];
           if (node) {
             p.loadDirectory(node.path);
@@ -401,13 +391,9 @@ export function createCommands(app: App): InputCallbacks {
         }
       },
 
-      onPrevSibling: () => {
-        // Currently unused but available for future binding
-      },
-
       onTreeRoot: async () => {
         const p = app.activePanel();
-        p.treePane.widget.select(0);
+        p.treeState.selectedIndex = 0;
         const root = p.treeState.flatNodes[0];
         if (root) {
           await p.loadDirectory(root.path);

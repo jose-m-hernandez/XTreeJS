@@ -15,6 +15,8 @@ export interface TreeNode {
 export interface TreeState {
   root: TreeNode;
   flatNodes: TreeNode[];
+  /** Index into flatNodes of the tree cursor. Moves only through this field. */
+  selectedIndex: number;
 }
 
 export async function createTreeNode(
@@ -130,10 +132,24 @@ export async function createTreeState(startPath: string): Promise<TreeState> {
     await expandNode(current);
   }
 
+  const flatNodes = flattenTree(root);
+  const startIndex = flatNodes.findIndex((n) => n.path === resolvedPath);
   return {
     root,
-    flatNodes: flattenTree(root),
+    flatNodes,
+    selectedIndex: Math.max(0, startIndex),
   };
+}
+
+/**
+ * Moves the tree cursor onto the node for `targetPath`, if the flattened tree
+ * has one; otherwise the cursor stays where it is. Returns whether it moved.
+ */
+export function selectTreePath(state: TreeState, targetPath: string): boolean {
+  const idx = state.flatNodes.findIndex((n) => n.path === targetPath);
+  if (idx < 0) return false;
+  state.selectedIndex = idx;
+  return true;
 }
 
 export function refreshFlatNodes(state: TreeState): void {

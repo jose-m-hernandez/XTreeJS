@@ -49,10 +49,10 @@ export async function createApp(
     refreshUI();
   });
 
-  function refreshUI(): void {
-    const p = activePanel();
+  // Pushes the active panel's state into the shared widgets. It never renders:
+  // refreshUI does that once, after all of it.
+  function updateWidgets(p: Panel): void {
     const { state, treeState, treePane, filePane } = p;
-    if (state.viewMode === 'viewer') return;
 
     // Apply display mode to panes
     treePane.setDisplayMode(state.displayMode);
@@ -99,7 +99,7 @@ export async function createApp(
 
     filePane.refresh(displayEntries, state.taggedPaths);
     filePane.setSelectedIndex(state.selectedIndex);
-    treePane.refresh(treeState.flatNodes, state.currentPath);
+    treePane.refresh(treeState.flatNodes, state.currentPath, treeState.selectedIndex);
     statusBar.updatePath(
       state.currentPath,
       displayEntries.length,
@@ -117,7 +117,21 @@ export async function createApp(
     // Update focus visuals
     filePane.setFocused(state.focusPane === 'files');
     treePane.setFocused(state.focusPane === 'tree');
+  }
 
+  // One render per refresh. neo-blessed also renders from inside widget calls
+  // (a list's label follows its scroll, and select/setItems scroll), so renders
+  // are held while the widgets are updated and the one real render comes last.
+  function refreshUI(): void {
+    const p = activePanel();
+    if (p.state.viewMode === 'viewer') return;
+    const realRender = screen.render;
+    screen.render = () => {};
+    try {
+      updateWidgets(p);
+    } finally {
+      screen.render = realRender;
+    }
     screen.render();
   }
   panel.refreshUI = refreshUI;

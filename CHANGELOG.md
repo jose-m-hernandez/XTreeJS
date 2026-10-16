@@ -9,9 +9,18 @@ The format is based on Keep a Changelog and follows semantic versioning.
 ### Changed
 
 - Single key router: `src/tui/key-router.ts` holds the only screen `keypress` listener and a stack of modal layers (viewer, Help, quick reference, confirm, attributes, prompt, dedupe report); the normal-mode bindings are a data table in `src/tui/keymap.ts` instead of dozens of separate `screen.key` registrations. A modal now consumes the key it receives. `setupInput` takes an optional sixth `onError` argument, and the `InputCallbacks` methods may return promises.
+- The app is now an `App` with a `Panel` (`src/app/`) instead of one closure in `main()`. The tree cursor is `TreeState.selectedIndex`, and one `refreshUI` renders the screen once instead of 16 to 17 times.
+- The two identical byte-size formatters are one `formatSize` in `src/util/format.ts`, and `SortOrder`/`SortDirection` moved to `src/types.ts` so `src/fs` no longer imports from `src/state`.
+
+### Removed
+
+- The unused `onInvertAllTags` and `onPrevSibling` callbacks and the `invertTags` helper.
 
 ### Fixed
 
+- A file name or path containing blessed tag text (for example `{bold}x.txt`) was drawn as markup; the file pane, tree, status bar, statistics pane and confirm/prompt text now show it literally.
+- Moving the tree cursor and then refreshing (for example when directory stats finished computing) snapped the cursor back to the current directory.
+- When two directory loads overlapped, the slower one could finish last and replace the listing with the wrong directory's files; a load that was overtaken is now dropped.
 - `q` in the viewer closed the viewer and also quit the app, because the same keystroke then reached the global quit binding.
 - `q` (or `?`/Esc) closing Help also quit the app, and `j`/`k` scrolling Help also moved the file cursor.
 - Answering `n` to a Delete, Prune or Copy confirm also opened Rename.
