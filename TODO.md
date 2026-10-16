@@ -4,7 +4,7 @@ A modern revival of the classic DOS-era XTree file manager (1985-1995), built wi
 
 Updated based on the original XTree / XTreePro Gold / XTreeGold manual reference.
 
-**Test suite:** 175 tests passing
+**Test suite:** 369 tests passing
 **Planning:** Strategic milestones live in `ROADMAP.md`; this file tracks implementation tasks.
 
 ---

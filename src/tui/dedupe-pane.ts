@@ -6,6 +6,7 @@
 
 import blessed from 'neo-blessed';
 import { Colors, fg } from '../config/defaults.js';
+import { getKeyRouter, modalLayer } from './key-router.js';
 
 export function showTextReport(
   screen: blessed.Widgets.Screen,
@@ -43,9 +44,10 @@ export function showTextReport(
 
     screen.render();
 
-    const handler = (ch: string, key: blessed.Widgets.Events.IKeyEventArg) => {
+    const router = getKeyRouter(screen);
+    const layer = modalLayer((ch, key) => {
       if (key.name === 'q' || key.name === 'escape') {
-        screen.removeListener('keypress', handler);
+        router.pop(layer);
         box.destroy();
         screen.render();
         resolve();
@@ -62,9 +64,8 @@ export function showTextReport(
         box.scroll(height - 2);
         screen.render();
       }
-    };
-
-    screen.on('keypress', handler);
+    });
+    router.push(layer);
   });
 }
 

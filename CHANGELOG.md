@@ -25,9 +25,19 @@ The format is based on Keep a Changelog and follows semantic versioning.
 - DRY pass across `src/`: extracted shared helpers for FileEntry construction (`fs/list.ts`), viewFile* error handling (`fs/view.ts`), directory re-listing and the copy/move/delete result-handling tail (`index.ts`), and branch/showall mode toggling (`index.ts`). No behavior change.
 - `AGENTS.md` is the contributor contract; `CLAUDE.md` is a one-line `@AGENTS.md` bridge. README opens with its purpose sentence.
 - `setupInput` now takes `TreePane` directly instead of `index.ts` smuggling the raw widget through `(screen as any)._treeWidget`; the 7 call sites that re-derived the selected tree index now call `TreePane.getSelectedIndex()`.
+- Single key router: `src/tui/key-router.ts` holds the only screen `keypress` listener and a stack of modal layers (viewer, Help, quick reference, confirm, attributes, prompt, dedupe report); the normal-mode bindings are a data table in `src/tui/keymap.ts` instead of dozens of separate `screen.key` registrations. A modal now consumes the key it receives. `setupInput` takes an optional sixth `onError` argument, and the `InputCallbacks` methods may return promises.
 
 ### Fixed
 
+- `q` in the viewer closed the viewer and also quit the app, because the same keystroke then reached the global quit binding.
+- `q` (or `?`/Esc) closing Help also quit the app, and `j`/`k` scrolling Help also moved the file cursor.
+- Answering `n` to a Delete, Prune or Copy confirm also opened Rename.
+- `c` in the attributes dialog also opened Copy, and `q` there also quit the app.
+- The key that closed the quick reference card also ran its normal action.
+- Prompt history keys (Up/Down, F3 paste, Ctrl+Backspace) never fired, because the textbox grabs the keyboard and the screen never saw them; they are now bound on the textbox.
+- `Ctrl+i` (invert all tags) never fired, since a terminal sends it as Tab; it is no longer listed in Help or the quick reference. `i` (invert current) is unchanged.
+- A callback that rejected (most are async) was dropped as an unhandled rejection; the failure now shows on the bottom bar.
+- The dedupe compare report: `q` closing it also quit the app, and `j`/`k` scrolling it also moved the file cursor.
 - `tsc --noEmit` now typechecks `tests/` and `scripts/` too, not just `src/` — the `tsconfig.json` `include` list and CI's typecheck step previously left both directories unchecked (they're clean; this only closes the coverage gap).
 - `scripts/release.ts` (validates every tag/version/changelog release gate) had no test coverage at all; added 7 subprocess-driven tests covering the `check`/`notes` commands' success and failure paths.
 - Shift+J (toggle junk mode) in the viewer was unreachable dead code — blessed reports it as `key.name: 'j', key.shift: true`, not `'J'`, so it was always intercepted by the plain `j` scroll-down case before reaching the branch that handled it.

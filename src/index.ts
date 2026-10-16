@@ -772,6 +772,9 @@ async function main() {
       await showTextReport(screen, ' Dedupe Compare (dry run) ', reportLines);
       refreshUI();
     },
+  }, (message) => {
+    // A handler that rejected: show why on the bottom bar; the next refresh restores the hints.
+    statusBar.updateBottomHints(`Error: ${message}`);
   });
 
   // Initial load

@@ -1,6 +1,7 @@
 import blessed from 'neo-blessed';
 import { Colors, fg } from '../config/defaults.js';
 import type { FileAttributes } from '../fs/operations.js';
+import { getKeyRouter, modalLayer, type KeyLayer } from './key-router.js';
 
 // Prompt history keyed by prompt type
 const promptHistories = new Map<string, string[]>();
@@ -82,6 +83,14 @@ export function showPrompt(
     let historyIndex = -1;
     let savedInput = defaultValue;
 
+    // The textbox grabs the keyboard (screen.grabKeys), which stops the screen
+    // from emitting keys at all, so history keys must be bound on the textbox
+    // itself. The layer keeps any key that does reach the screen away from the
+    // keymap while the prompt is open.
+    const router = getKeyRouter(screen);
+    const layer: KeyLayer = modalLayer(() => {});
+    router.push(layer);
+
     // Intercept keypresses for history and special keys
     const keyHandler = (ch: string, key: blessed.Widgets.Events.IKeyEventArg) => {
       if (key.name === 'up' && history.length > 0) {
@@ -112,10 +121,10 @@ export function showPrompt(
       }
     };
 
-    screen.on('keypress', keyHandler);
+    input.on('keypress', keyHandler);
 
     input.on('submit', (value: string) => {
-      screen.removeListener('keypress', keyHandler);
+      router.pop(layer);
       promptBox.destroy();
       screen.render();
       if (value && historyKey) {
@@ -128,7 +137,7 @@ export function showPrompt(
     });
 
     input.on('cancel', () => {
-      screen.removeListener('keypress', keyHandler);
+      router.pop(layer);
       promptBox.destroy();
       screen.render();
       resolve(null);
@@ -160,14 +169,15 @@ export function showConfirm(
 
     screen.render();
 
-    const handler = (ch: string, key: blessed.Widgets.Events.IKeyEventArg) => {
-      screen.removeListener('keypress', handler);
+    // Any key answers the confirm, and the key is spent doing so.
+    const router = getKeyRouter(screen);
+    const layer = modalLayer((ch, key) => {
+      router.pop(layer);
       confirmBox.destroy();
       screen.render();
       resolve(key.name === 'y' || ch === 'y' || ch === 'Y');
-    };
-
-    screen.on('keypress', handler);
+    });
+    router.push(layer);
   });
 }
 
@@ -217,21 +227,21 @@ export function showAttributes(
 
     screen.render();
 
-    const handler = (ch: string, key: blessed.Widgets.Events.IKeyEventArg) => {
+    const router = getKeyRouter(screen);
+    const layer = modalLayer((ch, key) => {
       if (key.name === 'escape' || key.name === 'q') {
-        screen.removeListener('keypress', handler);
+        router.pop(layer);
         box.destroy();
         screen.render();
         resolve(null);
       } else if (ch === 'c' || ch === 'C') {
-        screen.removeListener('keypress', handler);
+        router.pop(layer);
         box.destroy();
         screen.render();
         resolve('chmod');
       }
-    };
-
-    screen.on('keypress', handler);
+    });
+    router.push(layer);
   });
 }
 
