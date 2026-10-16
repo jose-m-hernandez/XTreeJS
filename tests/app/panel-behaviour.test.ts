@@ -38,7 +38,7 @@ async function makeApp(startPath: string): Promise<App> {
   h = createHeadlessScreen();
   const app = await createApp(h.screen, startPath);
   const p = app.activePanel();
-  setupInput(h.screen, p.state, p.treeState, p.treePane, createCommands(app));
+  setupInput(h.screen, p.state, p.treeState, createCommands(app));
   await p.loadDirectory(startPath);
   p.state.focusPane = 'tree';
   p.treePane.widget.focus();
@@ -216,6 +216,16 @@ describe('F1: tag-like text in names is shown literally', () => {
     app.refreshUI();
     const w = app.statsPane.widget as any;
     expect(regionText(h!.screen, w).some((r) => r.includes('{bold}d'))).toBe(true);
+  });
+
+  test('stats pane filespec', async () => {
+    const app = await makeApp(tmp);
+    const panel = app.activePanel();
+    panel.state.filespecFilter = '*.{bold}';
+    panel.state.displayMode = 'dir';
+    app.refreshUI();
+    const w = app.statsPane.widget as any;
+    expect(regionText(h!.screen, w).some((r) => r.includes('*.{bold}'))).toBe(true);
   });
 
   test('status bar path', async () => {

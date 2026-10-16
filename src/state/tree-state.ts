@@ -1,6 +1,10 @@
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import type { Dirent } from 'fs';
 import { hasSubdirectories } from '../fs/list.js';
+
+/** Same ordering as localeCompare(b, undefined, { sensitivity: 'base' }), built once. */
+const NAME_COLLATOR = new Intl.Collator(undefined, { sensitivity: 'base' });
 
 export interface TreeNode {
   path: string;
@@ -36,45 +40,85 @@ export async function createTreeNode(
   };
 }
 
+const CHILD_CONCURRENCY = 32;
+
+/** Maps `items` through `fn` with at most `limit` in flight; results keep input order. */
+async function mapLimit<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  const worker = async (): Promise<void> => {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await fn(items[i], i);
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, () => worker())
+  );
+  return results;
+}
+
+/**
+ * Known symlink asymmetry, kept on purpose and not fixed here: expandNode
+ * follows symlinks (a symlinked dir appears as a child), while
+ * hasSubdirectories does not (a dir whose only subdir is a symlink is not
+ * expandable). tests/state/tree-state-equivalence.test.ts pins it.
+ */
 export async function expandNode(node: TreeNode): Promise<void> {
   if (!node.hasSubdirs || node.expanded) return;
 
   try {
-    const entries = await fs.readdir(node.path);
-    const dirs: string[] = [];
+    const entries = await fs.readdir(node.path, { withFileTypes: true });
+    const candidates: { fullPath: string; isDir: boolean }[] = [];
 
-    for (const name of entries) {
-      if (name.startsWith('.')) continue; // skip hidden by default in tree
-      const fullPath = path.join(node.path, name);
-      try {
-        const stat = await fs.stat(fullPath); // stat follows symlinks so symlinked dirs appear
-        if (stat.isDirectory()) {
-          dirs.push(fullPath);
-        }
-      } catch {
-        continue;
+    for (const entry of entries) {
+      if (entry.name.startsWith('.')) continue; // skip hidden by default in tree
+      const fullPath = path.join(node.path, entry.name);
+      if (entry.isDirectory()) {
+        candidates.push({ fullPath, isDir: true });
+      } else if (entry.isSymbolicLink() || !isKnownType(entry)) {
+        // Needs stat, which follows symlinks so symlinked dirs appear.
+        candidates.push({ fullPath, isDir: false });
       }
     }
 
-    dirs.sort((a, b) =>
-      path.basename(a).localeCompare(path.basename(b), undefined, {
-        sensitivity: 'base',
-      })
-    );
+    const checked = await mapLimit(candidates, CHILD_CONCURRENCY, async (c) => {
+      if (c.isDir) return c.fullPath;
+      try {
+        const stat = await fs.stat(c.fullPath);
+        return stat.isDirectory() ? c.fullPath : null;
+      } catch {
+        return null;
+      }
+    });
+    const dirs = checked.filter((p): p is string => p !== null);
 
-    node.children = [];
-    for (let i = 0; i < dirs.length; i++) {
-      const child = await createTreeNode(
-        dirs[i],
-        node.depth + 1,
-        i === dirs.length - 1
-      );
-      node.children.push(child);
-    }
+    dirs.sort((a, b) => NAME_COLLATOR.compare(path.basename(a), path.basename(b)));
+
+    node.children = await mapLimit(dirs, CHILD_CONCURRENCY, (dir, i) =>
+      createTreeNode(dir, node.depth + 1, i === dirs.length - 1)
+    );
     node.expanded = true;
   } catch {
     // Can't read directory
   }
+}
+
+/** True when the Dirent carries a real type (not DT_UNKNOWN). */
+function isKnownType(entry: Dirent): boolean {
+  return (
+    entry.isFile() ||
+    entry.isDirectory() ||
+    entry.isSymbolicLink() ||
+    entry.isBlockDevice() ||
+    entry.isCharacterDevice() ||
+    entry.isFIFO() ||
+    entry.isSocket()
+  );
 }
 
 export function collapseNode(node: TreeNode): void {

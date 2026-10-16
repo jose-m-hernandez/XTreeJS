@@ -8,7 +8,10 @@ The format is based on Keep a Changelog and follows semantic versioning.
 
 ### Changed
 
-- Single key router: `src/tui/key-router.ts` holds the only screen `keypress` listener and a stack of modal layers (viewer, Help, quick reference, confirm, attributes, prompt, dedupe report); the normal-mode bindings are a data table in `src/tui/keymap.ts` instead of dozens of separate `screen.key` registrations. A modal now consumes the key it receives. `setupInput` takes an optional sixth `onError` argument, and the `InputCallbacks` methods may return promises.
+- Building the tree no longer stats every child serially: `expandNode` reads entries with `withFileTypes`, stats only symlinks and unknown types, builds child nodes with bounded concurrency (32), and sorts names with one shared `Intl.Collator` (same order as `localeCompare` with base sensitivity). On a directory of 5,000 subdirectories the tree build went from 372 ms to 74 ms. The existing symlink asymmetry (the tree follows symlinked directories; the "has subdirectories" test does not) is unchanged and now documented in the code.
+- `setupInput` no longer takes the unused `treePane` argument.
+- TypeScript is pinned in `devDependencies` at 7.0.2, so `bunx tsc --noEmit` no longer resolves whatever is latest.
+- Single key router: `src/tui/key-router.ts` holds the only screen `keypress` listener and a stack of modal layers (viewer, Help, quick reference, confirm, attributes, prompt, dedupe report); the normal-mode bindings are a data table in `src/tui/keymap.ts` instead of dozens of separate `screen.key` registrations. A modal now consumes the key it receives. `setupInput` takes an optional `onError` argument, and the `InputCallbacks` methods may return promises.
 - The app is now an `App` with a `Panel` (`src/app/`) instead of one closure in `main()`. The tree cursor is `TreeState.selectedIndex`, and one `refreshUI` renders the screen once instead of 16 to 17 times.
 - The two identical byte-size formatters are one `formatSize` in `src/util/format.ts`, and `SortOrder`/`SortDirection` moved to `src/types.ts` so `src/fs` no longer imports from `src/state`.
 

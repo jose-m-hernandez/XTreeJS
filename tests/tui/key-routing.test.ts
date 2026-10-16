@@ -79,7 +79,7 @@ function makeApp(overrides: Partial<InputCallbacks> = {}): App {
     state.viewMode = 'normal';
     state.viewerState = null;
   });
-  setupInput(h.screen, state, treeState, treePane, callbacks, (msg: string) => errors.push(msg));
+  setupInput(h.screen, state, treeState, callbacks, (msg: string) => errors.push(msg));
   return { h, state, calls, errors, viewerPane };
 }
 

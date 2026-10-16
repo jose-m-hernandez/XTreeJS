@@ -2,6 +2,7 @@ import { $ } from 'bun';
 import { getCachedTools } from './detect-tools.js';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import type { Dirent } from 'fs';
 
 export interface FileEntry {
   name: string;
@@ -224,10 +225,15 @@ export async function listAllFilesRecursive(dirPath: string): Promise<string[]> 
 
 export async function hasSubdirectories(dirPath: string): Promise<boolean> {
   try {
-    const names = await fs.readdir(dirPath);
-    for (const name of names) {
+    // lstat semantics, on purpose: a symlink to a dir does not count here,
+    // although expandNode lists it (known asymmetry, not changed).
+    const entries = await fs.readdir(dirPath, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.isDirectory()) return true;
+      if (entry.isSymbolicLink() || hasKnownType(entry)) continue;
+      // DT_UNKNOWN: the Dirent says nothing, so ask lstat.
       try {
-        const stat = await fs.lstat(path.join(dirPath, name));
+        const stat = await fs.lstat(path.join(dirPath, entry.name));
         if (stat.isDirectory()) return true;
       } catch {
         continue;
@@ -237,4 +243,14 @@ export async function hasSubdirectories(dirPath: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+function hasKnownType(entry: Dirent): boolean {
+  return (
+    entry.isFile() ||
+    entry.isBlockDevice() ||
+    entry.isCharacterDevice() ||
+    entry.isFIFO() ||
+    entry.isSocket()
+  );
 }
