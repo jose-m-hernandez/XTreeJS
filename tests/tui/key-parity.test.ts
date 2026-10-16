@@ -40,6 +40,7 @@ interface Fixture {
   T: string;
   state: AppState;
   treeState: TreeState;
+  /** The tree cursor, as rows' setup functions arrange it: a view of treeState.selectedIndex. */
   treeSelected: { value: number };
 }
 
@@ -83,8 +84,16 @@ async function makeFixture(pane: Pane): Promise<Fixture> {
   await expandNode(root);
   root.expanded = true;
   // flatNodes: [T, T/sub1 (collapsed, has subdirs), T/sub2]
-  const treeState: TreeState = { root, flatNodes: flattenTree(root) };
-  return { T, state, treeState, treeSelected: { value: 1 } };
+  const treeState: TreeState = { root, flatNodes: flattenTree(root), selectedIndex: 1 };
+  const treeSelected = {
+    get value() {
+      return treeState.selectedIndex;
+    },
+    set value(i: number) {
+      treeState.selectedIndex = i;
+    },
+  };
+  return { T, state, treeState, treeSelected };
 }
 
 function snapshot(state: AppState): Changes {
@@ -124,17 +133,8 @@ async function run(row: Row): Promise<{ fired: string[]; changes: Changes }> {
     log.push(args.length ? `${name}:${args.join(',')}` : name);
   };
 
-  const treePane = {
-    widget: {
-      up: rec('tree.up'),
-      down: rec('tree.down'),
-      select: (i: number) => {
-        f.treeSelected.value = i;
-        log.push(`tree.select:${i}`);
-      },
-    },
-    getSelectedIndex: () => f.treeSelected.value,
-  } as unknown as TreePane;
+  // The tree cursor is TreeState.selectedIndex; input.ts never touches the pane.
+  const treePane = {} as unknown as TreePane;
 
   // Every callback, so a missing name is a compile error.
   const callbacks: InputCallbacks = {
@@ -153,7 +153,6 @@ async function run(row: Row): Promise<{ fired: string[]; changes: Changes }> {
     onFilespec: rec('onFilespec'),
     onToggleFilespec: rec('onToggleFilespec'),
     onInvertTag: rec('onInvertTag'),
-    onInvertAllTags: rec('onInvertAllTags'),
     onSpeedNav: rec('onSpeedNav'),
     onRename: rec('onRename'),
     onMakeDir: rec('onMakeDir'),
@@ -161,7 +160,6 @@ async function run(row: Row): Promise<{ fired: string[]; changes: Changes }> {
     onEditor: rec('onEditor'),
     onDeepDive: rec('onDeepDive'),
     onNextSibling: rec('onNextSibling'),
-    onPrevSibling: rec('onPrevSibling'),
     onTreeRoot: rec('onTreeRoot'),
     onDisplayCycle: rec('onDisplayCycle'),
     onForceRefresh: rec('onForceRefresh'),
@@ -211,9 +209,9 @@ const ROWS: Row[] = [
   ...both(['tab'], ['onTabSwitch']),
   // Cursor up/down: files move selectedIndex; tree moves the list widget
   ...files(['up', 'k'], ['onRefresh'], { selectedIndex: 0 }),
-  ...tree(['up', 'k'], ['tree.up:1']),
+  ...tree(['up', 'k'], ['onRefresh']), // changed by B10
   ...files(['down', 'j'], ['onRefresh'], { selectedIndex: 2 }),
-  ...tree(['down', 'j'], ['tree.down:1']),
+  ...tree(['down', 'j'], ['onRefresh']), // changed by B10
   // Enter: files cycle display on a file; tree expands a collapsed node and selects it
   ...files(['enter'], ['onDisplayCycle']),
   ...tree(['enter'], ['onTreeSelect:$T/sub1']),
@@ -222,7 +220,7 @@ const ROWS: Row[] = [
   ...tree(['right', 'l'], ['onDeepDive']),
   // Left: files go to the parent directory; tree jumps to the parent node
   ...files(['left', 'backspace', 'h'], ['onNavigate:$T']),
-  ...tree(['left', 'backspace', 'h'], ['tree.select:0', 'onTreeSelect:$T']),
+  ...tree(['left', 'backspace', 'h'], ['onTreeSelect:$T']), // changed by B10
   // Backslash: root
   ...both(['\\'], ['onNavigate:/']),
   // Home / End / paging

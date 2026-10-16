@@ -1,9 +1,9 @@
 import type { FileEntry } from '../fs/list.js';
+import type { SortOrder, SortDirection } from '../types.js';
 
 export type ViewMode = 'normal' | 'viewer';
 export type FocusPane = 'tree' | 'files';
-export type SortOrder = 'name' | 'ext' | 'size' | 'date' | 'unsorted';
-export type SortDirection = 'asc' | 'desc';
+export type { SortOrder, SortDirection };
 export type DisplayMode = 'dir' | 'small' | 'expanded';
 
 export type ListingMode = 'normal' | 'branch' | 'showall';
@@ -87,17 +87,6 @@ export function untagCurrent(state: AppState, path: string): void {
 
 export function untagAll(state: AppState): void {
   state.taggedPaths.clear();
-}
-
-export function invertTags(state: AppState): void {
-  for (const entry of state.entries) {
-    if (entry.isDirectory) continue;
-    if (state.taggedPaths.has(entry.path)) {
-      state.taggedPaths.delete(entry.path);
-    } else {
-      state.taggedPaths.add(entry.path);
-    }
-  }
 }
 
 export function getVisibleEntries(state: AppState): FileEntry[] {

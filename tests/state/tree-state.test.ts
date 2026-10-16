@@ -179,7 +179,7 @@ describe('expandTreeToPath', () => {
     // Build a tree rooted below the filesystem root (unlike the app's real
     // volume-rooted tree) so a sibling path genuinely falls outside it.
     const root = await createTreeNode(path.join(TEST_DIR, 'alpha'), 0, true);
-    const state = { root, flatNodes: flattenTree(root) };
+    const state = { root, flatNodes: flattenTree(root), selectedIndex: 0 };
     await expandTreeToPath(state, path.join(TEST_DIR, 'beta'));
     expect(state.root.expanded).toBe(false);
   });

@@ -57,7 +57,7 @@ function makeApp(overrides: Partial<InputCallbacks> = {}): App {
     calls.push(name);
   };
   const node = { path: tmp, name: 'tmp', depth: 0, expanded: true, hasSubdirs: false, children: [], isLast: true };
-  const treeState: TreeState = { root: node, flatNodes: [node] };
+  const treeState: TreeState = { root: node, flatNodes: [node], selectedIndex: 0 };
   const treePane = {
     widget: { up() {}, down() {}, select() {} },
     getSelectedIndex: () => 0,
@@ -66,8 +66,8 @@ function makeApp(overrides: Partial<InputCallbacks> = {}): App {
   const names = [
     'onNavigate', 'onRefresh', 'onQuit', 'onCopy', 'onMove', 'onDelete', 'onPrune', 'onView',
     'onTabSwitch', 'onTreeSelect', 'onSort', 'onSortDirection', 'onFilespec', 'onToggleFilespec',
-    'onInvertTag', 'onInvertAllTags', 'onSpeedNav', 'onRename', 'onMakeDir', 'onAttributes',
-    'onEditor', 'onDeepDive', 'onNextSibling', 'onPrevSibling', 'onTreeRoot', 'onDisplayCycle',
+    'onInvertTag', 'onSpeedNav', 'onRename', 'onMakeDir', 'onAttributes',
+    'onEditor', 'onDeepDive', 'onNextSibling', 'onTreeRoot', 'onDisplayCycle',
     'onForceRefresh', 'onHelp', 'onQuickRef', 'onBranchMode', 'onShowallMode', 'onTagByFilespec',
     'onUntagByFilespec', 'onTagAllGlobal', 'onUntagAllGlobal', 'onToggleTaggedOnly',
     'onPatternRename', 'onDedupeCompare',

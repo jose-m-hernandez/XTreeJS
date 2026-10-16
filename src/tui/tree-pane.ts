@@ -7,10 +7,10 @@ import type { DisplayMode } from '../state/app-state.js';
 
 export interface TreePane {
   widget: blessed.Widgets.ListElement;
-  refresh(nodes: TreeNode[], currentPath: string): void;
+  /** `currentPath` is only highlighted; the cursor goes where `selectedIndex` says. */
+  refresh(nodes: TreeNode[], currentPath: string, selectedIndex: number): void;
   setFocused(focused: boolean): void;
   getSelectedIndex(): number;
-  setSelectedIndex(index: number): void;
   setDisplayMode(mode: DisplayMode): void;
 }
 
@@ -55,7 +55,7 @@ export function createTreePane(screen: blessed.Widgets.Screen): TreePane {
         : TreeChars.collapsed
       : '   ';
 
-    const name = node.name;
+    const name = blessed.escape(node.name);
     const isCurrent = node.path === currentPath;
     const color = isCurrent ? Colors.selectionBg : Colors.directory;
 
@@ -70,15 +70,12 @@ export function createTreePane(screen: blessed.Widgets.Screen): TreePane {
     return `${indent}${prefix}${fg(`${expandIcon} ${name}`, color)}${statsStr}`;
   }
 
-  function refresh(nodes: TreeNode[], currentPath: string): void {
+  function refresh(nodes: TreeNode[], currentPath: string, selectedIndex: number): void {
     const items = nodes.map((n) => formatTreeLine(n, currentPath));
     widget.setItems(items as any);
-    // Try to select the current path
-    const idx = nodes.findIndex((n) => n.path === currentPath);
-    if (idx >= 0) {
-      widget.select(idx);
+    if (nodes.length > 0) {
+      widget.select(Math.min(Math.max(0, selectedIndex), nodes.length - 1));
     }
-    screen.render();
   }
 
   function setFocused(focused: boolean): void {
@@ -91,16 +88,10 @@ export function createTreePane(screen: blessed.Widgets.Screen): TreePane {
     if (focused) {
       widget.focus();
     }
-    screen.render();
   }
 
   function getSelectedIndex(): number {
     return (widget as any).selected ?? 0;
-  }
-
-  function setSelectedIndex(index: number): void {
-    widget.select(index);
-    screen.render();
   }
 
   function setDisplayMode(mode: DisplayMode): void {
@@ -118,8 +109,7 @@ export function createTreePane(screen: blessed.Widgets.Screen): TreePane {
       // expanded — hide tree
       widget.hide();
     }
-    screen.render();
   }
 
-  return { widget, refresh, setFocused, getSelectedIndex, setSelectedIndex, setDisplayMode };
+  return { widget, refresh, setFocused, getSelectedIndex, setDisplayMode };
 }

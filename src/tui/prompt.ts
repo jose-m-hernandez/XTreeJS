@@ -56,7 +56,7 @@ export function showPrompt(
         bg: Colors.promptBg,
         fg: Colors.promptFg,
       },
-      label: ` ${title} `,
+      label: ` ${blessed.escape(title)} `,
       tags: true,
     });
 
@@ -164,7 +164,7 @@ export function showConfirm(
       },
       label: ' Confirm ',
       tags: true,
-      content: `\n ${message}\n\n ${fg('y', Colors.valueFg)} = Yes   ${fg('n', Colors.valueFg)}/${fg('Esc', Colors.valueFg)} = No`,
+      content: `\n ${blessed.escape(message)}\n\n ${fg('y', Colors.valueFg)} = Yes   ${fg('n', Colors.valueFg)}/${fg('Esc', Colors.valueFg)} = No`,
     });
 
     screen.render();
@@ -197,7 +197,7 @@ export function showAttributes(
     const type = attrs.isDirectory ? 'Directory' : attrs.isSymlink ? 'Symlink' : 'File';
     const content = [
       '',
-      `  Name:         ${fileName}`,
+      `  Name:         ${blessed.escape(fileName)}`,
       `  Type:         ${type}`,
       `  Size:         ${formatSize(attrs.size)}`,
       `  Permissions:  ${attrs.permissions} (octal)`,

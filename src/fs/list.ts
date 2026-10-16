@@ -70,7 +70,7 @@ async function listWithReaddir(dirPath: string): Promise<FileEntry[]> {
   }
 }
 
-import type { SortOrder, SortDirection } from '../state/app-state.js';
+import type { SortOrder, SortDirection } from '../types.js';
 
 export function sortEntries(
   entries: FileEntry[],

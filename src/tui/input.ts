@@ -37,7 +37,6 @@ export interface InputCallbacks {
   onFilespec(): void | Promise<void>;
   onToggleFilespec(): void | Promise<void>;
   onInvertTag(): void | Promise<void>;
-  onInvertAllTags(): void | Promise<void>;
   onSpeedNav(letter: string): void | Promise<void>;
   onRename(): void | Promise<void>;
   onMakeDir(): void | Promise<void>;
@@ -45,7 +44,6 @@ export interface InputCallbacks {
   onEditor(): void | Promise<void>;
   onDeepDive(): void | Promise<void>;
   onNextSibling(): void | Promise<void>;
-  onPrevSibling(): void | Promise<void>;
   onTreeRoot(): void | Promise<void>;
   onDisplayCycle(): void | Promise<void>;
   onForceRefresh(): void | Promise<void>;
@@ -79,7 +77,7 @@ export function setupInput(
   if (onError) router.setErrorHandler(onError);
 
   function selectedTreeNode() {
-    return treeState.flatNodes[treePane.getSelectedIndex()];
+    return treeState.flatNodes[treeState.selectedIndex];
   }
 
   const local: Record<LocalAction, (key: blessed.Widgets.Events.IKeyEventArg) => void | Promise<void>> = {
@@ -90,9 +88,10 @@ export function setupInput(
           return callbacks.onRefresh();
         }
       } else {
-        // Tree navigation handled via tree pane's selected index
-        treePane.widget.up(1);
-        screen.render();
+        if (treeState.selectedIndex > 0) {
+          treeState.selectedIndex--;
+          return callbacks.onRefresh();
+        }
       }
     },
 
@@ -103,8 +102,10 @@ export function setupInput(
           return callbacks.onRefresh();
         }
       } else {
-        treePane.widget.down(1);
-        screen.render();
+        if (treeState.selectedIndex < treeState.flatNodes.length - 1) {
+          treeState.selectedIndex++;
+          return callbacks.onRefresh();
+        }
       }
     },
 
@@ -150,7 +151,7 @@ export function setupInput(
         }
       } else {
         // In tree: macOS pattern — if expanded, collapse; if collapsed, jump to parent
-        const idx = treePane.getSelectedIndex();
+        const idx = treeState.selectedIndex;
         const node = treeState.flatNodes[idx];
         if (node && node.expanded) {
           collapseNode(node);
@@ -160,7 +161,7 @@ export function setupInput(
           // Jump to parent: scan backwards for first node at depth - 1
           for (let i = idx - 1; i >= 0; i--) {
             if (treeState.flatNodes[i].depth === node.depth - 1) {
-              treePane.widget.select(i);
+              treeState.selectedIndex = i;
               return callbacks.onTreeSelect(treeState.flatNodes[i].path);
             }
           }

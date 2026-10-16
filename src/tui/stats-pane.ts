@@ -58,7 +58,7 @@ export function createStatsPane(screen: blessed.Widgets.Screen): StatsPane {
 
     const lines = [
       '',
-      `  ${fg('FILE  ', Colors.labelFg)}${fg(data.filespec, Colors.valueFg)}`,
+      `  ${fg('FILE  ', Colors.labelFg)}${fg(blessed.escape(data.filespec), Colors.valueFg)}`,
       '',
       `  ${fg('DISK', Colors.labelFg)}  ${fg(diskMount, Colors.valueFg)}`,
       `    ${fg('Available', Colors.labelFg)}`,
@@ -76,22 +76,19 @@ export function createStatsPane(screen: blessed.Widgets.Screen): StatsPane {
       `      ${fg('Bytes:', Colors.labelFg)}  ${fg(formatStatsSize(data.taggedBytes), Colors.valueFg)}`,
       '',
       `  ${fg('Current Directory', Colors.labelFg)}`,
-      `    ${fg(data.currentDirName, Colors.valueFg)}`,
+      `    ${fg(blessed.escape(data.currentDirName), Colors.valueFg)}`,
       `      ${fg('Files:', Colors.labelFg)}  ${fg(formatNumber(data.currentDirFiles), Colors.valueFg)}`,
     ];
 
     widget.setContent(lines.join('\n'));
-    screen.render();
   }
 
   function show(): void {
     widget.show();
-    screen.render();
   }
 
   function hide(): void {
     widget.hide();
-    screen.render();
   }
 
   return { widget, refresh, show, hide };
