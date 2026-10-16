@@ -57,6 +57,7 @@ export interface InputCallbacks {
   onUntagAllGlobal(): void;
   onToggleTaggedOnly(): void;
   onPatternRename(): void;
+  onDedupeCompare(): void;
 }
 
 export function setupInput(
@@ -480,6 +481,12 @@ export function setupInput(
   screen.key(['C-n'], () => {
     if (state.viewMode !== 'normal') return;
     callbacks.onPatternRename();
+  });
+
+  // Ctrl+D: compare the selected directory against another (dedupe, read-only)
+  screen.key(['C-d'], () => {
+    if (state.viewMode !== 'normal' || state.focusPane !== 'files') return;
+    callbacks.onDedupeCompare();
   });
 
   // Speed navigation: Shift+Letter jumps to next entry starting with that letter

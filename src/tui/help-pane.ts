@@ -30,6 +30,7 @@ const FILE_HELP: HelpEntry[] = [
   { key: 'Ctrl+U', description: 'Untag ALL files across entire tree' },
   { key: 'Ctrl+G', description: 'Toggle show tagged files only' },
   { key: 'Ctrl+N', description: 'Pattern rename tagged files' },
+  { key: 'Ctrl+D', description: 'Compare selected directory against another (dry run, read-only)' },
   { key: 'b', description: 'Branch mode (recursive listing)' },
   { key: 's', description: 'Cycle sort order' },
   { key: 'S', description: 'Toggle sort direction' },

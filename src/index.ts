@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import * as path from 'path';
+import * as fs from 'fs/promises';
 import { createScreen } from './tui/screen.js';
 import { createTreePane } from './tui/tree-pane.js';
 import { createFilePane } from './tui/file-pane.js';
@@ -38,9 +39,19 @@ import type { OperationResult } from './fs/operations.js';
 import { setupInput } from './tui/input.js';
 import { showPrompt, showConfirm, showAttributes } from './tui/prompt.js';
 import { showHelp, showQuickRef } from './tui/help-pane.js';
+import { showTextReport, showBusyMessage } from './tui/dedupe-pane.js';
+import { scanTree, compareManifests, formatComparisonLines } from './fs/dedupe.js';
 import { Defaults } from './config/defaults.js';
+import { runDedupeCommand } from './cli/dedupe-cli.js';
 
 async function main() {
+  // Non-interactive subcommands bypass the TUI entirely.
+  const args = process.argv.slice(2);
+  if (args[0] === 'dedupe') {
+    const code = await runDedupeCommand(args.slice(1));
+    process.exit(code);
+  }
+
   // Detect available tools first
   await detectTools();
 
@@ -703,6 +714,63 @@ async function main() {
       }
       state.taggedPaths.clear();
       await loadDirectory(state.currentPath);
+    },
+
+    onDedupeCompare: async () => {
+      const entry = getSelectedEntry(state);
+      if (!entry?.isDirectory) {
+        await showConfirm(screen, 'Select a directory first to compare it against another.');
+        refreshUI();
+        return;
+      }
+
+      const otherPath = await showPrompt(
+        screen,
+        `Compare "${entry.name}" against:`,
+        state.currentPath,
+        'dedupe-compare'
+      );
+      if (!otherPath) {
+        refreshUI();
+        return;
+      }
+
+      const resolvedOther = path.resolve(otherPath);
+      try {
+        const stat = await fs.stat(resolvedOther);
+        if (!stat.isDirectory()) {
+          await showConfirm(screen, `Not a directory: ${resolvedOther}`);
+          refreshUI();
+          return;
+        }
+      } catch {
+        await showConfirm(screen, `Directory not found: ${resolvedOther}`);
+        refreshUI();
+        return;
+      }
+
+      // Dry run only: this reads and hashes both trees but never writes
+      // anything. Merging (actually copying/moving files) is not wired up
+      // yet -- see TODO.md.
+      const closeBusy = showBusyMessage(screen, `Scanning and hashing "${entry.name}" and "${path.basename(resolvedOther)}"...`);
+      let reportLines: string[];
+      try {
+        const [manifestA, manifestB] = await Promise.all([
+          scanTree(entry.path),
+          scanTree(resolvedOther),
+        ]);
+        const cmp = compareManifests(manifestA, manifestB);
+        reportLines = formatComparisonLines(entry.name, path.basename(resolvedOther), cmp);
+      } catch (err: any) {
+        closeBusy();
+        await showConfirm(screen, `Compare failed: ${err.message}`);
+        refreshUI();
+        return;
+      }
+      closeBusy();
+
+      await showTextReport(screen, ' Dedupe Compare (dry run) ', reportLines);
+      refreshUI();
     },
   });
 
