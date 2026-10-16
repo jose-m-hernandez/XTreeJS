@@ -78,7 +78,7 @@ reverses it.
 
 ```bash
 bunx tsc --noEmit   # typecheck
-bun test            # 158 tests
+bun test            # run the test suite
 ```
 
 ## Release Contract
