@@ -6,6 +6,22 @@ The format is based on Keep a Changelog and follows semantic versioning.
 
 ## [Unreleased]
 
+### Changed
+
+- Single key router: `src/tui/key-router.ts` holds the only screen `keypress` listener and a stack of modal layers (viewer, Help, quick reference, confirm, attributes, prompt, dedupe report); the normal-mode bindings are a data table in `src/tui/keymap.ts` instead of dozens of separate `screen.key` registrations. A modal now consumes the key it receives. `setupInput` takes an optional sixth `onError` argument, and the `InputCallbacks` methods may return promises.
+
+### Fixed
+
+- `q` in the viewer closed the viewer and also quit the app, because the same keystroke then reached the global quit binding.
+- `q` (or `?`/Esc) closing Help also quit the app, and `j`/`k` scrolling Help also moved the file cursor.
+- Answering `n` to a Delete, Prune or Copy confirm also opened Rename.
+- `c` in the attributes dialog also opened Copy, and `q` there also quit the app.
+- The key that closed the quick reference card also ran its normal action.
+- Prompt history keys (Up/Down, F3 paste, Ctrl+Backspace) never fired, because the textbox grabs the keyboard and the screen never saw them; they are now bound on the textbox.
+- `Ctrl+i` (invert all tags) never fired, since a terminal sends it as Tab; it is no longer listed in Help or the quick reference. `i` (invert current) is unchanged.
+- A callback that rejected (most are async) was dropped as an unhandled rejection; the failure now shows on the bottom bar.
+- The dedupe compare report: `q` closing it also quit the app, and `j`/`k` scrolling it also moved the file cursor.
+
 ## [0.1.1] - 2026-10-16
 
 ### Added

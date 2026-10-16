@@ -6,6 +6,7 @@ import {
   searchInLines, wrapLines, expandTabs,
 } from '../fs/view.js';
 import { showSearchPrompt } from './prompt.js';
+import { getKeyRouter, modalLayer, type KeyLayer } from './key-router.js';
 import * as path from 'path';
 
 export interface ViewerPane {
@@ -66,6 +67,7 @@ export function createViewerPane(
   let filePath = '';
   let visible = false;
   let followTimer: ReturnType<typeof setInterval> | null = null;
+  let keyLayer: KeyLayer | null = null;
 
   function getVisibleHeight(): number {
     if (!viewerBox) return 20;
@@ -375,8 +377,12 @@ export function createViewerPane(
       }
     };
 
-    screen.on('keypress', keyHandler);
-    (screen as any)._viewerKeyHandler = keyHandler;
+    // The viewer is a modal: it takes every key while open, and its work (which
+    // may await a prompt or a file read) runs under the router so a failure is
+    // reported rather than dropped.
+    const router = getKeyRouter(screen);
+    keyLayer = modalLayer((ch, key) => router.run(() => keyHandler(ch, key)));
+    router.push(keyLayer);
   }
 
   function nextMatch(): void {
@@ -479,10 +485,9 @@ export function createViewerPane(
       bottomBar.destroy();
       bottomBar = null;
     }
-    const handler = (screen as any)._viewerKeyHandler;
-    if (handler) {
-      screen.removeListener('keypress', handler);
-      (screen as any)._viewerKeyHandler = null;
+    if (keyLayer) {
+      getKeyRouter(screen).pop(keyLayer);
+      keyLayer = null;
     }
     screen.render();
   }

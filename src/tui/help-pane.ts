@@ -1,14 +1,15 @@
 import blessed from 'neo-blessed';
 import { Colors, fg } from '../config/defaults.js';
+import { getKeyRouter, modalLayer } from './key-router.js';
 
 type HelpContext = 'files' | 'tree' | 'viewer';
 
-interface HelpEntry {
+export interface HelpEntry {
   key: string;
   description: string;
 }
 
-const FILE_HELP: HelpEntry[] = [
+export const FILE_HELP: HelpEntry[] = [
   { key: 'Up/k', description: 'Move cursor up' },
   { key: 'Down/j', description: 'Move cursor down' },
   { key: 'Enter/Right', description: 'Enter directory / Cycle display mode' },
@@ -23,7 +24,6 @@ const FILE_HELP: HelpEntry[] = [
   { key: 'u', description: 'Untag current file' },
   { key: 'U', description: 'Untag all files' },
   { key: 'i', description: 'Invert tag on current file' },
-  { key: 'Ctrl+i', description: 'Invert all tags' },
   { key: '+/=', description: 'Tag files by filespec pattern' },
   { key: '-', description: 'Untag files by filespec pattern' },
   { key: 'Ctrl+T', description: 'Tag ALL files across entire tree' },
@@ -50,7 +50,7 @@ const FILE_HELP: HelpEntry[] = [
   { key: '?/F1', description: 'This help screen' },
 ];
 
-const TREE_HELP: HelpEntry[] = [
+export const TREE_HELP: HelpEntry[] = [
   { key: 'Up/k', description: 'Move cursor up' },
   { key: 'Down/j', description: 'Move cursor down' },
   { key: 'Right/l', description: 'Deep-dive into directory' },
@@ -172,9 +172,10 @@ export function showHelp(
 
     screen.render();
 
-    const handler = (ch: string, key: blessed.Widgets.Events.IKeyEventArg) => {
+    const router = getKeyRouter(screen);
+    const layer = modalLayer((ch, key) => {
       if (key.name === 'q' || key.name === 'escape' || ch === '?') {
-        screen.removeListener('keypress', handler);
+        router.pop(layer);
         box.destroy();
         screen.render();
         resolve();
@@ -185,9 +186,8 @@ export function showHelp(
         box.scroll(1);
         screen.render();
       }
-    };
-
-    screen.on('keypress', handler);
+    });
+    router.push(layer);
   });
 }
 
@@ -209,7 +209,7 @@ export function showQuickRef(
       '',
       `  ${fg('Tagging', Colors.valueFg)}`,
       '  t  Tag       T  Tag all      u  Untag      U  Untag all',
-      '  i  Invert    Ctrl+i  Invert all',
+      '  i  Invert',
       '  +  Tag spec  -  Untag spec   Ctrl+T  Tag tree  Ctrl+U  Untag tree',
       '  Ctrl+G  Show tagged only     Ctrl+N  Pattern rename',
       '',
@@ -255,13 +255,14 @@ export function showQuickRef(
 
     screen.render();
 
-    const handler = () => {
-      screen.removeListener('keypress', handler);
+    // Any key closes the card, and the key is spent doing so.
+    const router = getKeyRouter(screen);
+    const layer = modalLayer(() => {
+      router.pop(layer);
       box.destroy();
       screen.render();
       resolve();
-    };
-
-    screen.on('keypress', handler);
+    });
+    router.push(layer);
   });
 }
