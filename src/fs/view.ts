@@ -116,24 +116,48 @@ async function toViewResult(build: () => Promise<string[]>): Promise<ViewResult>
   }
 }
 
+export const HEX_BYTES_PER_LINE = 16;
+
+/** How many hex-dump lines `byteLength` bytes make. */
+export function hexLineCount(byteLength: number): number {
+  return Math.ceil(byteLength / HEX_BYTES_PER_LINE);
+}
+
+/** One hex-dump line (0-based `lineIndex`), built from only its own 16 bytes. */
+export function hexLine(buffer: Uint8Array, lineIndex: number): string {
+  const offset = lineIndex * HEX_BYTES_PER_LINE;
+  const chunk = buffer.subarray(offset, offset + HEX_BYTES_PER_LINE);
+  const hex = Array.from(chunk)
+    .map((b) => b.toString(16).padStart(2, '0').toUpperCase())
+    .join(' ');
+  const ascii = Array.from(chunk)
+    .map((b) => (b >= 0x20 && b <= 0x7e ? String.fromCharCode(b) : '.'))
+    .join('');
+  const offsetStr = offset.toString(16).padStart(8, '0').toUpperCase();
+  return `${offsetStr}  ${hex.padEnd(HEX_BYTES_PER_LINE * 3 - 1)}  |${ascii}|`;
+}
+
+/**
+ * The file's bytes, for building hex lines on demand, or the one-line error
+ * result `viewFileHex` reports when the file cannot be read.
+ */
+export async function readHexBytes(
+  filePath: string
+): Promise<{ buffer: Buffer } | { error: ViewResult }> {
+  try {
+    return { buffer: await fs.readFile(filePath) };
+  } catch (err: any) {
+    return { error: { lines: [`Error: ${err.message}`], totalLines: 1 } };
+  }
+}
+
 export function viewFileHex(filePath: string): Promise<ViewResult> {
   return toViewResult(async () => {
     const buffer = await fs.readFile(filePath);
     const lines: string[] = [];
-    const bytesPerLine = 16;
-
-    for (let offset = 0; offset < buffer.length; offset += bytesPerLine) {
-      const chunk = buffer.slice(offset, offset + bytesPerLine);
-      const hex = Array.from(chunk)
-        .map((b) => b.toString(16).padStart(2, '0').toUpperCase())
-        .join(' ');
-      const ascii = Array.from(chunk)
-        .map((b) => (b >= 0x20 && b <= 0x7e ? String.fromCharCode(b) : '.'))
-        .join('');
-      const offsetStr = offset.toString(16).padStart(8, '0').toUpperCase();
-      lines.push(`${offsetStr}  ${hex.padEnd(bytesPerLine * 3 - 1)}  |${ascii}|`);
+    for (let i = 0; i < hexLineCount(buffer.length); i++) {
+      lines.push(hexLine(buffer, i));
     }
-
     return lines;
   });
 }

@@ -14,6 +14,7 @@ The format is based on Keep a Changelog and follows semantic versioning.
 - Single key router: `src/tui/key-router.ts` holds the only screen `keypress` listener and a stack of modal layers (viewer, Help, quick reference, confirm, attributes, prompt, dedupe report); the normal-mode bindings are a data table in `src/tui/keymap.ts` instead of dozens of separate `screen.key` registrations. A modal now consumes the key it receives. `setupInput` takes an optional `onError` argument, and the `InputCallbacks` methods may return promises.
 - The app is now an `App` with a `Panel` (`src/app/`) instead of one closure in `main()`. The tree cursor is `TreeState.selectedIndex`, and one `refreshUI` renders the screen once instead of 16 to 17 times.
 - The two identical byte-size formatters are one `formatSize` in `src/util/format.ts`, and `SortOrder`/`SortDirection` moved to `src/types.ts` so `src/fs` no longer imports from `src/state`.
+- The viewer is split into a model (`src/tui/viewer-model.ts`, no blessed in it), a renderer (`src/tui/viewer-renderer.ts`) and the modal shell (`src/tui/viewer-pane.ts`). The model works on the app's `viewerState` directly, so the duplicate scroll position and line list that the viewer kept beside it are gone. Tab expansion and wrapping are computed once and cached until the tab size, wrap, width or lines change, instead of over every line on every keystroke, so a scroll costs the height of the window rather than the length of the file. Hex mode builds a 16-byte line only when it is on screen.
 
 ### Removed
 
@@ -21,6 +22,7 @@ The format is based on Keep a Changelog and follows semantic versioning.
 
 ### Fixed
 
+- File content and the file name shown in the viewer were drawn as markup: a line such as `{bold}x` lost its braces, and a file named `{bold}n.txt` was drawn as `n.txt`. Both (and the path in the top bar, and the hex text column) now show literally.
 - A file name or path containing blessed tag text (for example `{bold}x.txt`) was drawn as markup; the file pane, tree, status bar, statistics pane and confirm/prompt text now show it literally.
 - Moving the tree cursor and then refreshing (for example when directory stats finished computing) snapped the cursor back to the current directory.
 - When two directory loads overlapped, the slower one could finish last and replace the listing with the wrong directory's files; a load that was overtaken is now dropped.

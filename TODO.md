@@ -4,8 +4,17 @@ A modern revival of the classic DOS-era XTree file manager (1985-1995), built wi
 
 Updated based on the original XTree / XTreePro Gold / XTreeGold manual reference.
 
-**Test suite:** 381 tests passing
+**Test suite:** 518 tests passing
 **Planning:** Strategic milestones live in `ROADMAP.md`; this file tracks implementation tasks.
+
+## Known Limitations
+
+XTreeJS is a proof of concept; these are recorded, not planned.
+
+- Starting in a very wide directory is slow (rewrite territory): every subdirectory is probed for subfolders up front, about 2.3 s for 49,720 subdirectories.
+- Names that differ only by case or accent (a/A, e/é) sort in the filesystem's order, so the tree order can differ between macOS and Linux.
+- In the viewer with wrap on, the end of a file whose lines wrap cannot be reached: scrolling is bounded by the raw line count.
+- In the viewer with wrap on, search and gather count raw lines while the screen counts wrapped lines, so a match or gather range can land off by the wrapped rows above it.
 
 ---
 

@@ -10,6 +10,10 @@ export type ListingMode = 'normal' | 'branch' | 'showall';
 
 export type ViewerMode = 'text' | 'hex' | 'ascii' | 'junk';
 
+// The viewer's one copy of its state. `src/tui/viewer-model.ts` reads and writes
+// this very object (there is no second copy in the viewer), and turns `lines`
+// into an accessor over its line source: in hex mode the dump is built per
+// window, and reading `lines` builds all of it.
 export interface ViewerState {
   filePath: string;
   lines: string[];
