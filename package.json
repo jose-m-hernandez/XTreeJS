@@ -1,6 +1,6 @@
 {
   "name": "xtreejs",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Modern revival of the classic DOS-era XTree file manager (1985–1995)",
   "author": "Jose Hernandez",
   "packageManager": "bun@1.3.8",

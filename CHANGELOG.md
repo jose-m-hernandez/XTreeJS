@@ -6,8 +6,11 @@ The format is based on Keep a Changelog and follows semantic versioning.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-16
+
 ### Added
 
+- Content-hash folder dedupe: core logic, tests and a CLI, plus a dry-run, read-only compare pane in the TUI. It replaces the earlier standalone dedup/merge scripts, which were dropped before release.
 - `ARCHITECTURE.md` documenting the rationale for an off-the-shelf TUI framework and a shell-heavy filesystem layer, including the deliberate no-fallback exception for delete/prune.
 - README screenshot, family-legacy motivation section, and CI/license badges.
 - CI now runs `bunx tsc --noEmit` before the test step.
@@ -20,6 +23,7 @@ The format is based on Keep a Changelog and follows semantic versioning.
 - Release workflow now also runs the typecheck step, matching CI.
 - Downsized the README screenshot from a 3424px-wide Retina capture to 1440px (1.5M -> 512K) with no visible quality loss at its displayed width.
 - DRY pass across `src/`: extracted shared helpers for FileEntry construction (`fs/list.ts`), viewFile* error handling (`fs/view.ts`), directory re-listing and the copy/move/delete result-handling tail (`index.ts`), and branch/showall mode toggling (`index.ts`). No behavior change.
+- `AGENTS.md` is the contributor contract; `CLAUDE.md` is a one-line `@AGENTS.md` bridge. README opens with its purpose sentence.
 - `setupInput` now takes `TreePane` directly instead of `index.ts` smuggling the raw widget through `(screen as any)._treeWidget`; the 7 call sites that re-derived the selected tree index now call `TreePane.getSelectedIndex()`.
 
 ### Fixed
