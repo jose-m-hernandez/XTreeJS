@@ -28,7 +28,7 @@ async function main() {
   const p = app.activePanel();
 
   // Set up input handling
-  setupInput(screen, p.state, p.treeState, p.treePane, createCommands(app), (message) => {
+  setupInput(screen, p.state, p.treeState, createCommands(app), (message) => {
     // A handler that rejected: show why on the bottom bar; the next refresh restores the hints.
     app.statusBar.updateBottomHints(`Error: ${message}`);
     screen.render();

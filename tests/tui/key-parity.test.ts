@@ -177,7 +177,7 @@ async function run(row: Row): Promise<{ fired: string[]; changes: Changes }> {
   };
 
   try {
-    setupInput(screen, f.state, f.treeState, treePane, callbacks);
+    setupInput(screen, f.state, f.treeState, callbacks);
     const before = snapshot(f.state);
     const { name, opts } = parseKey(row.key);
     press(screen, name, opts);

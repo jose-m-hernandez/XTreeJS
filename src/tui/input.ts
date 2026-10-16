@@ -17,7 +17,6 @@ import {
   toggleNode,
   refreshFlatNodes,
 } from '../state/tree-state.js';
-import type { TreePane } from './tree-pane.js';
 import { getKeyRouter } from './key-router.js';
 import { findBinding, type LocalAction } from './keymap.js';
 
@@ -69,7 +68,6 @@ export function setupInput(
   screen: blessed.Widgets.Screen,
   state: AppState,
   treeState: TreeState,
-  treePane: TreePane,
   callbacks: InputCallbacks,
   onError?: (message: string) => void
 ): void {
