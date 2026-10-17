@@ -17,7 +17,7 @@ XTreeJS is a modern revival of the classic DOS-era XTree file manager (1985–19
 
 ```bash
 bun install          # install dependencies
-bun run start        # launch XTreeJS (once implemented)
+bun run start        # launch XTreeJS (src/index.ts)
 bun test             # run test suite
 bun run <script>     # run any package.json script
 ```
@@ -67,7 +67,7 @@ See `ARCHITECTURE.md` for the rationale behind these choices (why an off-the-she
 
 ## External Tool Dependencies
 
-These must be installed on the system (macOS via Homebrew):
+Install them with Homebrew (macOS):
 
 ```bash
 brew install fd bat trash rsync dust duf chafa
