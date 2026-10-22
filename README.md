@@ -1,6 +1,6 @@
 # XTreeJS
 
-[![CI](https://github.com/jozecuervo/XTreeJS/actions/workflows/ci.yml/badge.svg)](https://github.com/jozecuervo/XTreeJS/actions/workflows/ci.yml)
+[![CI](https://github.com/jose-m-hernandez/XTreeJS/actions/workflows/ci.yml/badge.svg)](https://github.com/jose-m-hernandez/XTreeJS/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 XTreeJS is a keyboard-first revival of the classic DOS file manager XTree, built with Bun and TypeScript.
