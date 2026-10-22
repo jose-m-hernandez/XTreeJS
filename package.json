@@ -10,12 +10,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jozecuervo/XTreeJS.git"
+    "url": "git+https://github.com/jose-m-hernandez/XTreeJS.git"
   },
   "bugs": {
-    "url": "https://github.com/jozecuervo/XTreeJS/issues"
+    "url": "https://github.com/jose-m-hernandez/XTreeJS/issues"
   },
-  "homepage": "https://github.com/jozecuervo/XTreeJS#readme",
+  "homepage": "https://github.com/jose-m-hernandez/XTreeJS#readme",
   "bin": {
     "xtree": "./src/index.ts"
   },
